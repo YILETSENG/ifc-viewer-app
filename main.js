@@ -1,7 +1,7 @@
 import { IfcViewerAPI } from 'web-ifc-viewer';
 
 const container = document.getElementById('app');
-// ✨ 修改 1：將 viewer 掛載到 window，讓妳可以在 Console 輸入指令
+// 1. 建立全域變數
 window.viewer = new IfcViewerAPI({ 
     container, 
     backgroundColor: {r: 220, g: 220, b: 220} 
@@ -12,20 +12,23 @@ window.viewer.axes.setAxes();
 window.viewer.IFC.setWasmPath('/'); 
 
 async function loadAndCenterModel() {
-    console.log("🚀 準備載入模型...");
+    console.log("🚀 正在努力載入模型，請稍候...");
     try {
-        // ✨ 修改 2：加上隨機數標籤，強迫 Vercel 重新讀取檔案
-        const model = await window.viewer.IFC.loadIfcUrl(`/model.ifc?v=${new Date().getTime()}`);
+        // 2. 載入模型 (加上隨機標籤防止快取)
+        const model = await window.viewer.IFC.loadIfcUrl(`/model.ifc?t=${new Date().getTime()}`);
         
-        // ✨ 修改 3：強制座標歸零與對焦
+        // 3. ✨ 強制歸零並自動對焦
         model.position.set(0, 0, 0);
-        await window.viewer.context.ifcCamera.activeCamera.controls.fitToBox(model, true);
-        window.viewer.shadowDropper.renderShadow(model.modelID);
         
-        console.log("🎉 模型載入成功！如果還是沒看到，請在 Console 輸入：viewer.context.ifcCamera.activeCamera.controls.fitToBox(viewer.IFC.loader.ifcManager.state.models[0].mesh, true)");
+        // 給引擎一點點渲染時間 (500ms)
+        setTimeout(async () => {
+            await window.viewer.context.ifcCamera.activeCamera.controls.fitToBox(model, true);
+            window.viewer.shadowDropper.renderShadow(model.modelID);
+            console.log("🎉 大功告成！模型已自動對焦。");
+        }, 500);
         
     } catch (error) {
-        console.error("❌ 錯誤：", error);
+        console.error("❌ 載入失敗：", error);
     }
 }
 
