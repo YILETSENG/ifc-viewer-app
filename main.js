@@ -1,44 +1,32 @@
 import { IfcViewerAPI } from 'web-ifc-viewer';
 
 const container = document.getElementById('app');
-const viewer = new IfcViewerAPI({ 
+// ✨ 修改 1：將 viewer 掛載到 window，讓妳可以在 Console 輸入指令
+window.viewer = new IfcViewerAPI({ 
     container, 
     backgroundColor: {r: 220, g: 220, b: 220} 
 });
 
-viewer.grid.setGrid();
-viewer.axes.setAxes();
-viewer.IFC.setWasmPath('/'); 
+window.viewer.grid.setGrid();
+window.viewer.axes.setAxes();
+window.viewer.IFC.setWasmPath('/'); 
 
 async function loadAndCenterModel() {
-    console.log("🚀 開始最後嘗試...");
+    console.log("🚀 準備載入模型...");
     try {
-        // 1. 載入模型
-        const model = await viewer.IFC.loadIfcUrl('/model.ifc');
-        console.log("✅ 成功抓到模型物件");
-
-        // 2. ✨ 強制將模型座標歸零 (避免座標過大導致消失)
+        // ✨ 修改 2：加上隨機數標籤，強迫 Vercel 重新讀取檔案
+        const model = await window.viewer.IFC.loadIfcUrl(`/model.ifc?v=${new Date().getTime()}`);
+        
+        // ✨ 修改 3：強制座標歸零與對焦
         model.position.set(0, 0, 0);
+        await window.viewer.context.ifcCamera.activeCamera.controls.fitToBox(model, true);
+        window.viewer.shadowDropper.renderShadow(model.modelID);
         
-        // 3. ✨ 強制相機瞬移到模型面前
-        await viewer.context.ifcCamera.activeCamera.controls.fitToBox(model, true);
-        
-        // 4. 渲染陰影
-        viewer.shadowDropper.renderShadow(model.modelID);
-        
-        console.log("🎉 模型應該在原點出現了！");
+        console.log("🎉 模型載入成功！如果還是沒看到，請在 Console 輸入：viewer.context.ifcCamera.activeCamera.controls.fitToBox(viewer.IFC.loader.ifcManager.state.models[0].mesh, true)");
         
     } catch (error) {
-        console.error("❌ 載入失敗：", error);
+        console.error("❌ 錯誤：", error);
     }
 }
 
 loadAndCenterModel();
-
-window.onpointerdown = async () => {
-    const result = await viewer.IFC.selector.pickIfcItem(true);
-    if (result) {
-        const props = await viewer.IFC.getProperties(result.modelID, result.id, true, false);
-        console.log("選取屬性：", props);
-    }
-};
