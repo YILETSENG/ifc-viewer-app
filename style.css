@@ -1,0 +1,11 @@
+/* 讓 3D 畫布撐滿整個瀏覽器視窗 */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+}
